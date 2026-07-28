@@ -46,10 +46,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.reply.R
 import com.example.reply.data.Email
 import com.example.reply.data.MailboxType
 import com.example.reply.data.local.LocalAccountsDataProvider
+import com.example.reply.data.local.LocalEmailsDataProvider
+import com.example.reply.ui.theme.ReplyTheme
 
 @Composable
 fun ReplyHomeScreen(
@@ -81,13 +84,21 @@ fun ReplyHomeScreen(
             text = stringResource(id = R.string.tab_spam)
         )
     )
-    ReplyAppContent(
-        replyUiState = replyUiState,
-        onTabPressed = onTabPressed,
-        onEmailCardPressed = onEmailCardPressed,
-        navigationItemContentList = navigationItemContentList,
-        modifier = modifier
-    )
+    if (replyUiState.isShowingHomepage) {
+        ReplyAppContent(
+            replyUiState = replyUiState,
+            onTabPressed = onTabPressed,
+            onEmailCardPressed = onEmailCardPressed,
+            navigationItemContentList = navigationItemContentList,
+            modifier = modifier
+        )
+    } else {
+        ReplyDetailsScreen(
+            replyUiState = replyUiState,
+            onBackPressed = onDetailScreenBackPressed,
+            modifier = modifier
+        )
+    }
 }
 
 @Composable
@@ -115,7 +126,8 @@ private fun ReplyAppContent(
             ReplyListOnlyContent(
                 replyUiState = replyUiState,
                 onEmailCardPressed = onEmailCardPressed,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
                     .padding(
                         horizontal = dimensionResource(R.dimen.email_list_only_horizontal_padding)
                     )
@@ -238,3 +250,165 @@ private data class NavigationItemContent(
     val icon: ImageVector,
     val text: String
 )
+
+@Preview(showBackground = true)
+@Composable
+fun ReplyHomeScreenPreview() {
+    ReplyTheme {
+        ReplyHomeScreen(
+            replyUiState = ReplyUiState(
+                mailboxes = mapOf(
+                    MailboxType.Inbox to LocalEmailsDataProvider.allEmails
+                )
+            ),
+            onTabPressed = {},
+            onEmailCardPressed = {},
+            onDetailScreenBackPressed = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ReplyAppContentPreview() {
+    ReplyTheme {
+        ReplyAppContent(
+            replyUiState = ReplyUiState(
+                mailboxes = mapOf(
+                    MailboxType.Inbox to LocalEmailsDataProvider.allEmails
+                )
+            ),
+            onTabPressed = {},
+            onEmailCardPressed = {},
+            navigationItemContentList = listOf(
+                NavigationItemContent(
+                    mailboxType = MailboxType.Inbox,
+                    icon = Icons.Default.Inbox,
+                    text = stringResource(id = R.string.tab_inbox)
+                ),
+                NavigationItemContent(
+                    mailboxType = MailboxType.Sent,
+                    icon = Icons.AutoMirrored.Filled.Send,
+                    text = stringResource(id = R.string.tab_sent)
+                ),
+                NavigationItemContent(
+                    mailboxType = MailboxType.Drafts,
+                    icon = Icons.Default.Drafts,
+                    text = stringResource(id = R.string.tab_drafts)
+                ),
+                NavigationItemContent(
+                    mailboxType = MailboxType.Spam,
+                    icon = Icons.Default.Report,
+                    text = stringResource(id = R.string.tab_spam)
+                )
+            )
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ReplyNavigationRailPreview() {
+    ReplyTheme {
+        ReplyNavigationRail(
+            currentTab = MailboxType.Inbox,
+            onTabPressed = {},
+            navigationItemContentList = listOf(
+                NavigationItemContent(
+                    mailboxType = MailboxType.Inbox,
+                    icon = Icons.Default.Inbox,
+                    text = stringResource(id = R.string.tab_inbox)
+                ),
+                NavigationItemContent(
+                    mailboxType = MailboxType.Sent,
+                    icon = Icons.AutoMirrored.Filled.Send,
+                    text = stringResource(id = R.string.tab_sent)
+                ),
+                NavigationItemContent(
+                    mailboxType = MailboxType.Drafts,
+                    icon = Icons.Default.Drafts,
+                    text = stringResource(id = R.string.tab_drafts)
+                ),
+                NavigationItemContent(
+                    mailboxType = MailboxType.Spam,
+                    icon = Icons.Default.Report,
+                    text = stringResource(id = R.string.tab_spam)
+                )
+            )
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ReplyBottomNavigationBarPreview() {
+    ReplyTheme {
+        ReplyBottomNavigationBar(
+            currentTab = MailboxType.Inbox,
+            onTabPressed = {},
+            navigationItemContentList = listOf(
+                NavigationItemContent(
+                    mailboxType = MailboxType.Inbox,
+                    icon = Icons.Default.Inbox,
+                    text = stringResource(id = R.string.tab_inbox)
+                ),
+                NavigationItemContent(
+                    mailboxType = MailboxType.Sent,
+                    icon = Icons.AutoMirrored.Filled.Send,
+                    text = stringResource(id = R.string.tab_sent)
+                ),
+                NavigationItemContent(
+                    mailboxType = MailboxType.Drafts,
+                    icon = Icons.Default.Drafts,
+                    text = stringResource(id = R.string.tab_drafts)
+                ),
+                NavigationItemContent(
+                    mailboxType = MailboxType.Spam,
+                    icon = Icons.Default.Report,
+                    text = stringResource(id = R.string.tab_spam)
+                )
+            )
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun NavigationDrawerContentPreview() {
+    ReplyTheme {
+        NavigationDrawerContent(
+            selectedDestination = MailboxType.Inbox,
+            onTabPressed = {},
+            navigationItemContentList = listOf(
+                NavigationItemContent(
+                    mailboxType = MailboxType.Inbox,
+                    icon = Icons.Default.Inbox,
+                    text = stringResource(id = R.string.tab_inbox)
+                ),
+                NavigationItemContent(
+                    mailboxType = MailboxType.Sent,
+                    icon = Icons.AutoMirrored.Filled.Send,
+                    text = stringResource(id = R.string.tab_sent)
+                ),
+                NavigationItemContent(
+                    mailboxType = MailboxType.Drafts,
+                    icon = Icons.Default.Drafts,
+                    text = stringResource(id = R.string.tab_drafts)
+                ),
+                NavigationItemContent(
+                    mailboxType = MailboxType.Spam,
+                    icon = Icons.Default.Report,
+                    text = stringResource(id = R.string.tab_spam)
+                )
+            )
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun NavigationDrawerHeaderPreview() {
+    ReplyTheme {
+        NavigationDrawerHeader()
+    }
+}
