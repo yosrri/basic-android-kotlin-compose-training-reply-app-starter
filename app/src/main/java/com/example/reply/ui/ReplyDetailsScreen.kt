@@ -16,6 +16,7 @@
 package com.example.reply.ui
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.reply.R
 import com.example.reply.data.Email
 import com.example.reply.data.MailboxType
@@ -57,6 +59,9 @@ fun ReplyDetailsScreen(
     onBackPressed: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    BackHandler() {
+        onBackPressed()
+    }
     Box(modifier = modifier) {
         LazyColumn(
             contentPadding = WindowInsets.safeDrawing.asPaddingValues(),
