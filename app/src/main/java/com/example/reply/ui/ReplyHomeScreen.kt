@@ -15,15 +15,18 @@
  */
 package com.example.reply.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Drafts
@@ -37,6 +40,8 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.PermanentDrawerSheet
+import androidx.compose.material3.PermanentNavigationDrawer
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -46,10 +51,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.reply.R
 import com.example.reply.data.Email
 import com.example.reply.data.MailboxType
 import com.example.reply.data.local.LocalAccountsDataProvider
+import com.example.reply.data.local.LocalEmailsDataProvider
+import com.example.reply.utils.ReplyContentType
+import com.example.reply.utils.ReplyNavigationType
 
 @Composable
 fun ReplyHomeScreen(
@@ -57,6 +66,8 @@ fun ReplyHomeScreen(
     onTabPressed: (MailboxType) -> Unit,
     onEmailCardPressed: (Email) -> Unit,
     onDetailScreenBackPressed: () -> Unit,
+    navigationType: ReplyNavigationType,
+    contentType: ReplyContentType,
     modifier: Modifier = Modifier
 ) {
     val navigationItemContentList = listOf(
@@ -81,53 +92,109 @@ fun ReplyHomeScreen(
             text = stringResource(id = R.string.tab_spam)
         )
     )
-    ReplyAppContent(
-        replyUiState = replyUiState,
-        onTabPressed = onTabPressed,
-        onEmailCardPressed = onEmailCardPressed,
-        navigationItemContentList = navigationItemContentList,
-        modifier = modifier
-    )
+
+    if (navigationType == ReplyNavigationType.PERMANENT_NAVIGATION_DRAWER) {
+        PermanentNavigationDrawer(
+            modifier = modifier,
+            drawerContent = {
+                PermanentDrawerSheet(Modifier.width(dimensionResource(R.dimen.drawer_width))) {
+                    NavigationDrawerContent(
+                        selectedDestination = replyUiState.currentMailbox,
+                        onTabPressed = onTabPressed,
+                        navigationItemContentList = navigationItemContentList,
+                        modifier = Modifier
+                            .wrapContentWidth()
+                            .fillMaxHeight()
+                            .background(MaterialTheme.colorScheme.inverseOnSurface)
+                            .padding(dimensionResource(R.dimen.drawer_padding_content))
+                    )
+                }
+            }
+        ) {
+            ReplyAppContent(
+                navigationType = navigationType,
+                contentType = contentType,
+                replyUiState = replyUiState,
+                onTabPressed = onTabPressed,
+                onEmailCardPressed = onEmailCardPressed,
+                navigationItemContentList = navigationItemContentList,
+            )
+        }
+    } else {
+        if (replyUiState.isShowingHomepage) {
+            ReplyAppContent(
+                navigationType = navigationType,
+                contentType = contentType,
+                replyUiState = replyUiState,
+                onTabPressed = onTabPressed,
+                onEmailCardPressed = onEmailCardPressed,
+                navigationItemContentList = navigationItemContentList,
+                modifier = modifier
+            )
+        } else {
+            ReplyDetailsScreen(
+                isFullScreen = true,
+                replyUiState = replyUiState,
+                onBackPressed = onDetailScreenBackPressed,
+                modifier = modifier
+            )
+        }
+    }
 }
 
 @Composable
 private fun ReplyAppContent(
+    navigationType: ReplyNavigationType,
+    contentType: ReplyContentType,
     replyUiState: ReplyUiState,
     onTabPressed: ((MailboxType) -> Unit),
     onEmailCardPressed: (Email) -> Unit,
     navigationItemContentList: List<NavigationItemContent>,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier) {
-        val navigationRailContentDescription = stringResource(R.string.navigation_rail)
-        ReplyNavigationRail(
-            currentTab = replyUiState.currentMailbox,
-            onTabPressed = onTabPressed,
-            navigationItemContentList = navigationItemContentList,
-            modifier = Modifier
-                .testTag(navigationRailContentDescription)
-        )
+    Row(modifier = modifier) {
+        AnimatedVisibility(visible = navigationType == ReplyNavigationType.NAVIGATION_RAIL) {
+            val navigationRailContentDescription = stringResource(R.string.navigation_rail)
+            ReplyNavigationRail(
+                currentTab = replyUiState.currentMailbox,
+                onTabPressed = onTabPressed,
+                navigationItemContentList = navigationItemContentList,
+                modifier = Modifier
+                    .testTag(navigationRailContentDescription)
+            )
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.inverseOnSurface)
         ) {
-            ReplyListOnlyContent(
-                replyUiState = replyUiState,
-                onEmailCardPressed = onEmailCardPressed,
-                modifier = Modifier.weight(1f)
-                    .padding(
-                        horizontal = dimensionResource(R.dimen.email_list_only_horizontal_padding)
-                    )
-            )
+            if (contentType == ReplyContentType.LIST_AND_DETAIL)
+                ReplyListAndDetailContent(
+                    isFullScreen = false,
+                    replyUiState = replyUiState,
+                    onEmailCardPressed = onEmailCardPressed
+                )
+            else
+                ReplyListOnlyContent(
+                    replyUiState = replyUiState,
+                    onEmailCardPressed = onEmailCardPressed,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(
+                            horizontal = dimensionResource(R.dimen.email_list_only_horizontal_padding)
+                        )
+                )
             val bottomNavigationContentDescription = stringResource(R.string.navigation_bottom)
-            ReplyBottomNavigationBar(
-                currentTab = replyUiState.currentMailbox,
-                onTabPressed = onTabPressed,
-                navigationItemContentList = navigationItemContentList,
-                modifier = Modifier
-                    .fillMaxWidth()
-            )
+            if (navigationType == ReplyNavigationType.BOTTOM_NAVIGATION) {
+                ReplyBottomNavigationBar(
+                    currentTab = replyUiState.currentMailbox,
+                    onTabPressed = onTabPressed,
+                    navigationItemContentList = navigationItemContentList,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(bottomNavigationContentDescription)
+                )
+            }
         }
     }
 }
@@ -232,6 +299,46 @@ private fun NavigationDrawerHeader(
         )
     }
 }
+
+
+@Preview
+@Composable
+private fun ReplyAppContentPreview() {
+    com.example.reply.ui.theme.ReplyTheme {
+        ReplyAppContent(
+            navigationType = ReplyNavigationType.NAVIGATION_RAIL,
+            contentType = ReplyContentType.LIST_ONLY,
+            replyUiState = ReplyUiState(
+                mailboxes = LocalEmailsDataProvider.allEmails.groupBy { it.mailbox }
+            ),
+            onTabPressed = {},
+            onEmailCardPressed = {},
+            navigationItemContentList = listOf(
+                NavigationItemContent(
+                    mailboxType = MailboxType.Inbox,
+                    icon = Icons.Default.Inbox,
+                    text = stringResource(id = R.string.tab_inbox)
+                ),
+                NavigationItemContent(
+                    mailboxType = MailboxType.Sent,
+                    icon = Icons.AutoMirrored.Filled.Send,
+                    text = stringResource(id = R.string.tab_sent)
+                ),
+                NavigationItemContent(
+                    mailboxType = MailboxType.Drafts,
+                    icon = Icons.Default.Drafts,
+                    text = stringResource(id = R.string.tab_drafts)
+                ),
+                NavigationItemContent(
+                    mailboxType = MailboxType.Spam,
+                    icon = Icons.Default.Report,
+                    text = stringResource(id = R.string.tab_spam)
+                )
+            ),
+        )
+    }
+}
+
 
 private data class NavigationItemContent(
     val mailboxType: MailboxType,
