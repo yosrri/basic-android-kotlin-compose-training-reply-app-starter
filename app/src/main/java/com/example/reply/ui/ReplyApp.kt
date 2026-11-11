@@ -15,19 +15,51 @@
  */
 package com.example.reply.ui
 
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.reply.data.Email
 import com.example.reply.data.MailboxType
+import com.example.reply.data.local.LocalEmailsDataProvider
+import com.example.reply.ui.theme.ReplyTheme
+import com.example.reply.utils.ReplyContentType
+import com.example.reply.utils.ReplyNavigationType
 
 @Composable
 fun ReplyApp(
+    windowSize: WindowWidthSizeClass,
     modifier: Modifier = Modifier,
 ) {
     val viewModel: ReplyViewModel = viewModel()
     val replyUiState = viewModel.uiState.collectAsState().value
+
+    val contentType: ReplyContentType
+    val navigationType: ReplyNavigationType
+    when (windowSize) {
+        WindowWidthSizeClass.Compact -> {
+            navigationType = ReplyNavigationType.BOTTOM_NAVIGATION
+            contentType = ReplyContentType.LIST_ONLY
+        }
+
+        WindowWidthSizeClass.Medium -> {
+            navigationType = ReplyNavigationType.NAVIGATION_RAIL
+            contentType = ReplyContentType.LIST_ONLY
+        }
+
+        WindowWidthSizeClass.Expanded -> {
+            navigationType = ReplyNavigationType.PERMANENT_NAVIGATION_DRAWER
+            contentType = ReplyContentType.LIST_AND_DETAIL
+        }
+
+        else -> {
+            navigationType = ReplyNavigationType.BOTTOM_NAVIGATION
+            contentType = ReplyContentType.LIST_ONLY
+        }
+    }
+
 
     ReplyHomeScreen(
         replyUiState = replyUiState,
@@ -43,6 +75,25 @@ fun ReplyApp(
         onDetailScreenBackPressed = {
             viewModel.resetHomeScreenStates()
         },
+        navigationType = navigationType,
+        contentType = contentType,
         modifier = modifier
     )
+}
+
+@Preview
+@Composable
+private fun ReplyAppPreview() {
+    ReplyTheme {
+        ReplyHomeScreen(
+            replyUiState = ReplyUiState(mailboxes = LocalEmailsDataProvider.allEmails.groupBy { it.mailbox }),
+            onTabPressed = {},
+            onEmailCardPressed = {},
+            onDetailScreenBackPressed = {},
+            navigationType = ReplyNavigationType.PERMANENT_NAVIGATION_DRAWER,
+            contentType = ReplyContentType.LIST_ONLY,
+            modifier = Modifier
+        )
+    }
+
 }
