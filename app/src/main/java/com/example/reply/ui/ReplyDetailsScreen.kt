@@ -16,6 +16,7 @@
 package com.example.reply.ui
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,16 +48,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.reply.R
 import com.example.reply.data.Email
 import com.example.reply.data.MailboxType
+import com.example.reply.data.local.LocalEmailsDataProvider
+import com.example.reply.ui.theme.ReplyTheme
+import com.example.reply.utils.ReplyNavigationType
 
 @Composable
 fun ReplyDetailsScreen(
+    isFullScreen: Boolean,
     replyUiState: ReplyUiState,
     onBackPressed: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    BackHandler(enabled = isFullScreen) {
+        onBackPressed()
+    }
+
     Box(modifier = modifier) {
         LazyColumn(
             contentPadding = WindowInsets.safeDrawing.asPaddingValues(),
@@ -65,16 +75,17 @@ fun ReplyDetailsScreen(
                 .background(color = MaterialTheme.colorScheme.inverseOnSurface)
         ) {
             item {
-                ReplyDetailsScreenTopBar(
-                    onBackPressed,
-                    replyUiState,
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            bottom = dimensionResource(R.dimen.detail_topbar_padding_bottom),
-                            top = dimensionResource(R.dimen.topbar_padding_vertical)
-                        )
-                )
+                if (isFullScreen)
+                    ReplyDetailsScreenTopBar(
+                        onBackPressed,
+                        replyUiState,
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                bottom = dimensionResource(R.dimen.detail_topbar_padding_bottom),
+                                top = dimensionResource(R.dimen.topbar_padding_vertical)
+                            )
+                    )
                 ReplyEmailDetailsCard(
                     email = replyUiState.currentSelectedEmail,
                     mailboxType = replyUiState.currentMailbox,
@@ -277,22 +288,38 @@ private fun ActionButton(
                 .padding(vertical = dimensionResource(R.dimen.detail_action_button_padding_vertical)),
             colors = ButtonDefaults.buttonColors(
                 containerColor =
-                if (containIrreversibleAction) {
-                    MaterialTheme.colorScheme.onErrorContainer
-                } else {
-                    MaterialTheme.colorScheme.primaryContainer
-                }
+                    if (containIrreversibleAction) {
+                        MaterialTheme.colorScheme.onErrorContainer
+                    } else {
+                        MaterialTheme.colorScheme.primaryContainer
+                    }
             )
         ) {
             Text(
                 text = text,
                 color =
-                if (containIrreversibleAction) {
-                    MaterialTheme.colorScheme.onError
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                }
+                    if (containIrreversibleAction) {
+                        MaterialTheme.colorScheme.onError
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
             )
         }
+    }
+}
+
+
+@Preview
+@Composable
+private fun ReplyDetailsScreenPreview() {
+    ReplyTheme {
+        ReplyDetailsScreen(
+            isFullScreen = true,
+            replyUiState = ReplyUiState(
+                currentSelectedEmail = LocalEmailsDataProvider.allEmails[0],
+                currentMailbox = MailboxType.Inbox
+            ),
+            onBackPressed = {}
+        )
     }
 }
