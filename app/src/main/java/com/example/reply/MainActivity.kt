@@ -54,8 +54,7 @@ class MainActivity : ComponentActivity() {
                                 .calculateEndPadding(layoutDirection)
                         )
                 ) {
-                    val windowSize = calculateWindowSizeClass(this)
-                    ReplyApp(windowSize = windowSize.widthSizeClass)
+                    ReplyApp()
                 }
             }
         }
@@ -67,7 +66,7 @@ class MainActivity : ComponentActivity() {
 fun ReplyAppCompactPreview() {
     ReplyTheme {
         Surface {
-            ReplyApp(WindowWidthSizeClass.Compact)
+            ReplyApp()
         }
     }
 }
@@ -77,7 +76,7 @@ fun ReplyAppCompactPreview() {
 fun ReplyAppMediumPreview() {
     ReplyTheme {
         Surface {
-            ReplyApp(WindowWidthSizeClass.Medium)
+            ReplyApp()
         }
     }
 }
@@ -88,7 +87,7 @@ fun ReplyAppMediumPreview() {
 fun ReplyAppExpandedPreview() {
     ReplyTheme {
         Surface {
-            ReplyApp(WindowWidthSizeClass.Expanded)
+            ReplyApp()
         }
     }
 }

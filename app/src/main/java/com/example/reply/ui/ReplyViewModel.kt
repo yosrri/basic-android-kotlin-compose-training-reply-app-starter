@@ -68,5 +68,6 @@ class ReplyViewModel : ViewModel() {
                 currentMailbox = mailboxType
             )
         }
+        resetHomeScreenStates()
     }
 }

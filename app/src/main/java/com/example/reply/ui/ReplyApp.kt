@@ -15,85 +15,122 @@
  */
 package com.example.reply.ui
 
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Drafts
+import androidx.compose.material.icons.filled.Inbox
+import androidx.compose.material.icons.filled.Report
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_EXPANDED_LOWER_BOUND
+import com.example.reply.R
 import com.example.reply.data.Email
 import com.example.reply.data.MailboxType
-import com.example.reply.data.local.LocalEmailsDataProvider
 import com.example.reply.ui.theme.ReplyTheme
-import com.example.reply.utils.ReplyContentType
-import com.example.reply.utils.ReplyNavigationType
 
 @Composable
 fun ReplyApp(
-    windowSize: WindowWidthSizeClass,
     modifier: Modifier = Modifier,
+    viewModel: ReplyViewModel = viewModel(),
 ) {
-    val viewModel: ReplyViewModel = viewModel()
-    val replyUiState = viewModel.uiState.collectAsState().value
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    val contentType: ReplyContentType
-    val navigationType: ReplyNavigationType
-    when (windowSize) {
-        WindowWidthSizeClass.Compact -> {
-            navigationType = ReplyNavigationType.BOTTOM_NAVIGATION
-            contentType = ReplyContentType.LIST_ONLY
-        }
-
-        WindowWidthSizeClass.Medium -> {
-            navigationType = ReplyNavigationType.NAVIGATION_RAIL
-            contentType = ReplyContentType.LIST_ONLY
-        }
-
-        WindowWidthSizeClass.Expanded -> {
-            navigationType = ReplyNavigationType.PERMANENT_NAVIGATION_DRAWER
-            contentType = ReplyContentType.LIST_AND_DETAIL
-        }
-
-        else -> {
-            navigationType = ReplyNavigationType.BOTTOM_NAVIGATION
-            contentType = ReplyContentType.LIST_ONLY
-        }
-    }
-
-
-    ReplyHomeScreen(
-        replyUiState = replyUiState,
-        onTabPressed = { mailboxType: MailboxType ->
-            viewModel.updateCurrentMailbox(mailboxType = mailboxType)
-            viewModel.resetHomeScreenStates()
-        },
-        onEmailCardPressed = { email: Email ->
-            viewModel.updateDetailsScreenStates(
-                email = email
-            )
-        },
-        onDetailScreenBackPressed = {
-            viewModel.resetHomeScreenStates()
-        },
-        navigationType = navigationType,
-        contentType = contentType,
-        modifier = modifier
+    val navigationItemContentList = listOf(
+        NavigationItemContent(
+            mailboxType = MailboxType.Inbox,
+            icon = Icons.Default.Inbox,
+            text = stringResource(id = R.string.tab_inbox)
+        ),
+        NavigationItemContent(
+            mailboxType = MailboxType.Sent,
+            icon = Icons.AutoMirrored.Filled.Send,
+            text = stringResource(id = R.string.tab_sent)
+        ),
+        NavigationItemContent(
+            mailboxType = MailboxType.Drafts,
+            icon = Icons.Default.Drafts,
+            text = stringResource(id = R.string.tab_drafts)
+        ),
+        NavigationItemContent(
+            mailboxType = MailboxType.Spam,
+            icon = Icons.Default.Report,
+            text = stringResource(id = R.string.tab_spam)
+        )
     )
-}
 
-@Preview
-@Composable
-private fun ReplyAppPreview() {
-    ReplyTheme {
-        ReplyHomeScreen(
-            replyUiState = ReplyUiState(mailboxes = LocalEmailsDataProvider.allEmails.groupBy { it.mailbox }),
-            onTabPressed = {},
-            onEmailCardPressed = {},
-            onDetailScreenBackPressed = {},
-            navigationType = ReplyNavigationType.PERMANENT_NAVIGATION_DRAWER,
-            contentType = ReplyContentType.LIST_ONLY,
+
+    val adaptiveInfo = currentWindowAdaptiveInfo()
+    val isLargeScreen = adaptiveInfo.windowSizeClass.isWidthAtLeastBreakpoint(
+        WIDTH_DP_EXPANDED_LOWER_BOUND
+    )
+
+    NavigationSuiteScaffold(
+        navigationSuiteItems = {
+            navigationItemContentList.forEach { item ->
+                item(
+                    selected = uiState.currentMailbox == item.mailboxType,
+                    onClick = {
+                        viewModel.updateCurrentMailbox(item.mailboxType)
+                    },
+                    icon = {
+                        Icon(
+                            imageVector = item.icon,
+                            contentDescription = null,
+                        )
+                    },
+                    label = { Text(text = item.text) },
+                )
+            }
+        },
+        layoutType =
+            if (isLargeScreen) NavigationSuiteType.NavigationDrawer
+            else NavigationSuiteScaffoldDefaults.navigationSuiteType(
+                adaptiveInfo
+            ),
+        modifier = modifier
+    ) {
+        ReplyListOnlyContent(
+            replyUiState = uiState,
+            onEmailCardPressed = { email: Email ->
+                viewModel.updateDetailsScreenStates(
+                    email = email
+                )
+            },
             modifier = Modifier
+                .padding(horizontal = dimensionResource(R.dimen.email_list_only_horizontal_padding)),
         )
     }
 
 }
+
+
+@Preview
+@Composable
+private fun ReplyAppPreview() {
+    ReplyTheme() {
+        ReplyApp(
+            modifier = Modifier,
+            viewModel = viewModel()
+        )
+    }
+}
+
+private data class NavigationItemContent(
+    val mailboxType: MailboxType,
+    val icon: ImageVector,
+    val text: String
+)
