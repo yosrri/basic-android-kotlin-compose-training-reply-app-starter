@@ -16,7 +16,6 @@
 package com.example.reply.ui
 
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,19 +53,14 @@ import com.example.reply.data.Email
 import com.example.reply.data.MailboxType
 import com.example.reply.data.local.LocalEmailsDataProvider
 import com.example.reply.ui.theme.ReplyTheme
-import com.example.reply.utils.ReplyNavigationType
 
 @Composable
 fun ReplyDetailsScreen(
-    isFullScreen: Boolean,
-    replyUiState: ReplyUiState,
+    canNavigateBack: Boolean,
+    email: Email,
     onBackPressed: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    BackHandler(enabled = isFullScreen) {
-        onBackPressed()
-    }
-
     Box(modifier = modifier) {
         LazyColumn(
             contentPadding = WindowInsets.safeDrawing.asPaddingValues(),
@@ -75,20 +69,20 @@ fun ReplyDetailsScreen(
                 .background(color = MaterialTheme.colorScheme.inverseOnSurface)
         ) {
             item {
-                if (isFullScreen)
-                    ReplyDetailsScreenTopBar(
-                        onBackPressed,
-                        replyUiState,
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                bottom = dimensionResource(R.dimen.detail_topbar_padding_bottom),
-                                top = dimensionResource(R.dimen.topbar_padding_vertical)
-                            )
-                    )
+                ReplyDetailsScreenTopBar(
+                    canNavigateBack,
+                    onBackPressed,
+                    email.subject,
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            bottom = dimensionResource(R.dimen.detail_topbar_padding_bottom),
+                            top = dimensionResource(R.dimen.topbar_padding_vertical)
+                        )
+                )
                 ReplyEmailDetailsCard(
-                    email = replyUiState.currentSelectedEmail,
-                    mailboxType = replyUiState.currentMailbox,
+                    email = email,
+                    mailboxType = email.mailbox,
                     modifier = Modifier
                         .navigationBarsPadding()
                         .padding(horizontal = dimensionResource(R.dimen.detail_card_outer_padding_horizontal))
@@ -100,25 +94,27 @@ fun ReplyDetailsScreen(
 
 @Composable
 private fun ReplyDetailsScreenTopBar(
+    canNavigateBack: Boolean,
     onBackButtonClicked: () -> Unit,
-    replyUiState: ReplyUiState,
+    subject: Int,
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(
-            onClick = onBackButtonClicked,
-            modifier = Modifier
-                .padding(horizontal = dimensionResource(R.dimen.detail_topbar_back_button_padding_horizontal))
-                .background(MaterialTheme.colorScheme.surface, shape = CircleShape),
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(id = R.string.navigation_back)
-            )
-        }
+        if (canNavigateBack)
+            IconButton(
+                onClick = onBackButtonClicked,
+                modifier = Modifier
+                    .padding(horizontal = dimensionResource(R.dimen.detail_topbar_back_button_padding_horizontal))
+                    .background(MaterialTheme.colorScheme.surface, shape = CircleShape),
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(id = R.string.navigation_back)
+                )
+            }
         Row(
             horizontalArrangement = Arrangement.Center,
             modifier = Modifier
@@ -126,7 +122,7 @@ private fun ReplyDetailsScreenTopBar(
                 .padding(end = dimensionResource(R.dimen.detail_subject_padding_end))
         ) {
             Text(
-                text = stringResource(replyUiState.currentSelectedEmail.subject),
+                text = stringResource(subject),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -314,11 +310,8 @@ private fun ActionButton(
 private fun ReplyDetailsScreenPreview() {
     ReplyTheme {
         ReplyDetailsScreen(
-            isFullScreen = true,
-            replyUiState = ReplyUiState(
-                currentSelectedEmail = LocalEmailsDataProvider.allEmails[0],
-                currentMailbox = MailboxType.Inbox
-            ),
+            canNavigateBack = true,
+            email = LocalEmailsDataProvider.allEmails[0],
             onBackPressed = {}
         )
     }

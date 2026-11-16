@@ -36,7 +36,7 @@ data class Email(
     /**
      * Relative duration in which it was created. (e.g. 20 mins ago)
      * It should be calculated from relative time in the future.
-     * For now it's hard coded to a [String] value.
+     * For now, it's hard coded to a [String] value.
      */
     var createdAt: Int = -1
 )

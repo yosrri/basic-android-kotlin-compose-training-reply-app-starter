@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -84,50 +83,8 @@ fun ReplyListOnlyContent(
     }
 }
 
-@Composable
-fun ReplyListAndDetailContent(
-    replyUiState: ReplyUiState,
-    onEmailCardPressed: (Email) -> Unit,
-    modifier: Modifier = Modifier,
-    isFullScreen: Boolean = false
-) {
-    val emails = replyUiState.currentMailboxEmails
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        LazyColumn(
-            contentPadding = WindowInsets.statusBars.asPaddingValues(),
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = dimensionResource(R.dimen.email_list_only_horizontal_padding)),
-            verticalArrangement = Arrangement.spacedBy(
-                dimensionResource(R.dimen.email_list_item_vertical_spacing)
-            )
-        ) {
-            items(emails, key = { email -> email.id }) { email ->
-                ReplyEmailListItem(
-                    email = email,
-                    selected = replyUiState.currentSelectedEmail.id == email.id,
-                    onCardClick = {
-                        onEmailCardPressed(email)
-                    },
-                )
-            }
-        }
 
-        ReplyDetailsScreen(
-            isFullScreen = isFullScreen,
-            replyUiState = replyUiState,
-            modifier = Modifier
-                .padding(top = dimensionResource(R.dimen.email_list_item_vertical_spacing))
-                .weight(1f),
-            onBackPressed = {}
-        )
-    }
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReplyEmailListItem(
     email: Email,

@@ -19,7 +19,7 @@ import com.example.reply.R
 import com.example.reply.data.Account
 
 /**
- * An static data store of [Account]s. This includes both [Account]s owned by the current user and
+ * A static data store of [Account]s. This includes both [Account]s owned by the current user and
  * all [Account]s of the current user's contacts.
  */
 object LocalAccountsDataProvider {

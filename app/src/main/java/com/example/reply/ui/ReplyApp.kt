@@ -23,12 +23,19 @@ import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Report
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.layout.AnimatedPane
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
+import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
+import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.dimensionResource
@@ -41,7 +48,9 @@ import com.example.reply.R
 import com.example.reply.data.Email
 import com.example.reply.data.MailboxType
 import com.example.reply.ui.theme.ReplyTheme
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun ReplyApp(
     modifier: Modifier = Modifier,
@@ -78,14 +87,13 @@ fun ReplyApp(
         WIDTH_DP_EXPANDED_LOWER_BOUND
     )
 
+    val navigator = rememberListDetailPaneScaffoldNavigator<Long>()
+    val scope = rememberCoroutineScope()
+
     NavigationSuiteScaffold(
         navigationSuiteItems = {
             navigationItemContentList.forEach { item ->
                 item(
-                    selected = uiState.currentMailbox == item.mailboxType,
-                    onClick = {
-                        viewModel.updateCurrentMailbox(item.mailboxType)
-                    },
                     icon = {
                         Icon(
                             imageVector = item.icon,
@@ -93,6 +101,15 @@ fun ReplyApp(
                         )
                     },
                     label = { Text(text = item.text) },
+                    selected = uiState.currentMailbox == item.mailboxType,
+                    onClick = {
+                        scope.launch {
+                            while (navigator.canNavigateBack(BackNavigationBehavior.PopUntilContentChange)) navigator.navigateBack(
+                                BackNavigationBehavior.PopUntilContentChange
+                            )
+                            viewModel.updateCurrentMailbox(item.mailboxType)
+                        }
+                    },
                 )
             }
         },
@@ -103,25 +120,53 @@ fun ReplyApp(
             ),
         modifier = modifier
     ) {
-        ReplyListOnlyContent(
-            replyUiState = uiState,
-            onEmailCardPressed = { email: Email ->
-                viewModel.updateDetailsScreenStates(
-                    email = email
-                )
+
+
+        NavigableListDetailPaneScaffold(
+            navigator = navigator,
+            listPane = {
+                AnimatedPane {
+                    ReplyListOnlyContent(
+                        replyUiState = uiState,
+                        onEmailCardPressed = { email: Email ->
+                            scope.launch {
+                                navigator.navigateTo(
+                                    pane = ListDetailPaneScaffoldRole.Detail,
+                                    contentKey = email.id
+                                )
+                            }
+                        },
+                        modifier = Modifier
+                            .padding(horizontal = dimensionResource(R.dimen.email_list_only_horizontal_padding)),
+                    )
+                }
             },
-            modifier = Modifier
-                .padding(horizontal = dimensionResource(R.dimen.email_list_only_horizontal_padding)),
+            detailPane = {
+                AnimatedPane {
+                    val selectedEmailId = navigator.currentDestination?.contentKey
+                    val email =
+                        uiState.currentMailboxEmails.find { it.id == selectedEmailId }
+                            ?: uiState.currentMailboxEmails.firstOrNull()
+
+                    email?.let {
+                        ReplyDetailsScreen(
+                            canNavigateBack = navigator.canNavigateBack(),
+                            email = email,
+                            onBackPressed = { scope.launch { navigator.navigateBack() } },
+                            modifier = Modifier
+                        )
+                    }
+                }
+            },
         )
     }
-
 }
 
 
 @Preview
 @Composable
 private fun ReplyAppPreview() {
-    ReplyTheme() {
+    ReplyTheme {
         ReplyApp(
             modifier = Modifier,
             viewModel = viewModel()
